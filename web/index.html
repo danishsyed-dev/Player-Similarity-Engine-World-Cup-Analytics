@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Explore World Cup player embeddings and discover statistically similar players through interactive PCA scatter plots and radar charts." />
+  <title>Player Similarity Engine — World Cup Analytics</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="site-header" data-animate="1">
+    <div class="app-container">
+      <h1 class="site-title">Player Similarity Engine</h1>
+      <p class="site-subtitle">Exploring statistical similarity across World Cup players using principal component analysis and per-90 metrics from FBref.</p>
+    </div>
+  </header>
+
+  <!-- ===== FILTERS ===== -->
+  <section class="filters-section" data-animate="2">
+    <div class="app-container">
+      <div class="filters-row">
+        <div class="filter-group">
+          <span class="filter-group-label">Tournament</span>
+          <button class="filter-pill active" data-filter="tournament" data-value="all" id="filter-tournament-all">All</button>
+          <button class="filter-pill" data-filter="tournament" data-value="2014" id="filter-tournament-2014">2014</button>
+          <button class="filter-pill" data-filter="tournament" data-value="2018" id="filter-tournament-2018">2018</button>
+          <button class="filter-pill" data-filter="tournament" data-value="2022" id="filter-tournament-2022">2022</button>
+        </div>
+        <div class="filter-group">
+          <span class="filter-group-label">Position</span>
+          <button class="filter-pill active" data-filter="position" data-value="all" id="filter-position-all">All</button>
+          <button class="filter-pill" data-filter="position" data-value="FW" id="filter-position-fw">FW</button>
+          <button class="filter-pill" data-filter="position" data-value="MF" id="filter-position-mf">MF</button>
+          <button class="filter-pill" data-filter="position" data-value="DF" id="filter-position-df">DF</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== LOADING SKELETON ===== -->
+  <div id="loading-skeleton" class="app-container">
+    <div class="main-grid" style="margin-top: 24px;">
+      <div class="left-column">
+        <div class="skeleton skeleton-text wide" style="height: 48px; margin-bottom: 24px;"></div>
+        <div class="skeleton skeleton-chart"></div>
+      </div>
+      <div class="right-column">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-text wide"></div>
+        <div class="skeleton skeleton-text narrow"></div>
+        <div class="skeleton skeleton-chart" style="height: 250px;"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ERROR STATE ===== -->
+  <div id="error-state" class="app-container" style="display: none; margin-top: 48px;">
+    <div class="error-state">
+      <h3>Unable to load player data</h3>
+      <p>Please check that <code>data/players.json</code> exists and try again.</p>
+      <button id="retry-button" onclick="location.reload()">Retry</button>
+    </div>
+  </div>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="app-container" id="main-content" style="display: none;">
+    <div class="main-grid" style="margin-top: 8px;">
+
+      <!-- LEFT COLUMN -->
+      <div class="left-column">
+        <!-- Search -->
+        <div class="search-container" data-animate="3" id="search-container">
+          <input
+            type="text"
+            class="search-input"
+            id="search-input"
+            placeholder="Search players by name..."
+            autocomplete="off"
+            aria-label="Search players"
+          />
+          <div class="search-dropdown" id="search-dropdown" role="listbox" aria-label="Search results"></div>
+        </div>
+
+        <!-- Scatter Plot -->
+        <section class="scatter-section" data-animate="4">
+          <h2>Player Embedding Space</h2>
+          <div class="scatter-container" id="scatter-container">
+            <canvas id="scatter-chart"></canvas>
+          </div>
+          <div class="scatter-legend" id="scatter-legend">
+            <div class="scatter-legend-item">
+              <span class="scatter-legend-dot fw"></span>Forward
+            </div>
+            <div class="scatter-legend-item">
+              <span class="scatter-legend-dot mf"></span>Midfielder
+            </div>
+            <div class="scatter-legend-item">
+              <span class="scatter-legend-dot df"></span>Defender
+            </div>
+          </div>
+        </section>
+
+        <!-- Stats Explanation -->
+        <section class="stats-explainer" data-animate="5">
+          <h3>How it works</h3>
+          <p>Player statistics are collected from FBref, normalized to per-90-minute rates, and reduced to two dimensions using PCA. Similar players cluster together in this space — the closer two dots, the more statistically similar those players' World Cup performances.</p>
+        </section>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <aside class="right-column">
+        <div class="player-panel" id="player-panel">
+
+          <!-- Empty State -->
+          <div class="empty-state" id="empty-state">
+            <p class="empty-state-title">Select a player</p>
+            <p class="empty-state-text">Click a point on the scatter plot or search by name to explore player profiles.</p>
+            
+            <div class="role-explorer">
+              <h4 class="role-explorer-title">Explore by Playing Style</h4>
+              <div class="role-grid">
+                <button class="role-card" data-role="creative" id="role-btn-creative">
+                  <span class="role-dot fw"></span>
+                  <div class="role-card-content">
+                    <span class="role-card-name">Creative Playmakers & Wingers</span>
+                    <span class="role-card-desc">High Passing & Possession (Top-Right)</span>
+                  </div>
+                </button>
+                <button class="role-card" data-role="clinical" id="role-btn-clinical">
+                  <span class="role-dot clinical"></span>
+                  <div class="role-card-content">
+                    <span class="role-card-name">Clinical Center-Forwards</span>
+                    <span class="role-card-desc">High Shooting & Box Presence (Bottom-Right)</span>
+                  </div>
+                </button>
+                <button class="role-card" data-role="tempo" id="role-btn-tempo">
+                  <span class="role-dot mf"></span>
+                  <div class="role-card-content">
+                    <span class="role-card-name">Tempo & Control Midfielders</span>
+                    <span class="role-card-desc">Buildup & Possession (Top-Left/Middle)</span>
+                  </div>
+                </button>
+                <button class="role-card" data-role="defensive" id="role-btn-defensive">
+                  <span class="role-dot df"></span>
+                  <div class="role-card-content">
+                    <span class="role-card-name">Defensive Specialists</span>
+                    <span class="role-card-desc">High Tackling & Clearances (Bottom-Left)</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selected Player Content (hidden initially) -->
+          <div id="selected-player-section" style="display: none;">
+
+            <!-- Player Card -->
+            <div class="selected-player-card" id="selected-player-card">
+              <button class="close-panel-btn" id="close-panel-btn" aria-label="Close panel">&times;</button>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span class="position-badge" id="player-position-badge"></span>
+                <span class="player-tournament" id="player-tournament"></span>
+              </div>
+              <h2 class="player-name" id="player-name"></h2>
+              <p class="player-team" id="player-team"></p>
+              <div class="key-stats" id="key-stats">
+                <div class="key-stat">
+                  <div class="key-stat-value" id="stat-goals">—</div>
+                  <div class="key-stat-label">Goals/90</div>
+                </div>
+                <div class="key-stat">
+                  <div class="key-stat-value" id="stat-assists">—</div>
+                  <div class="key-stat-label">Assists/90</div>
+                </div>
+                <div class="key-stat">
+                  <div class="key-stat-value" id="stat-minutes">—</div>
+                  <div class="key-stat-label">Minutes</div>
+                </div>
+                <div class="key-stat">
+                  <div class="key-stat-value" id="stat-matches">—</div>
+                  <div class="key-stat-label">Matches</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Radar Chart -->
+            <section class="radar-section">
+              <h3>Performance Profile</h3>
+              <div class="radar-container" id="radar-container">
+                <canvas id="radar-chart"></canvas>
+              </div>
+            </section>
+
+            <!-- Similar Players -->
+            <section class="similar-section">
+              <h3>Statistical Twins</h3>
+              <div class="similar-players-list" id="similar-players-list"></div>
+            </section>
+
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer" data-animate="6">
+    <div class="app-container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <p class="footer-text">Built with PCA and cosine similarity. Data sourced from FBref. A portfolio project by Danish.</p>
+      <div class="footer-links">
+        <a href="https://github.com/danishsyed-dev" class="footer-link" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://fbref.com" class="footer-link" target="_blank" rel="noopener">FBref</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Controller -->
+  <script src="app.js"></script>
+</body>
+</html>
