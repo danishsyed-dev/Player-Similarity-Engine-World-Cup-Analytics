@@ -1,45 +1,50 @@
 # Player Similarity Engine — World Cup Analytics
 
-An interactive digital analytics portfolio piece that maps, visualizes, and explores the statistical profiles of World Cup players (2014, 2018, and 2022). It employs **Principal Component Analysis (PCA)** for dimensionality reduction and **Cosine Similarity** to match players with their closest historical "statistical twins."
+An interactive, data-driven sports analytics application that maps, visualizes, and compares the statistical profiles of FIFA World Cup players across three major tournaments (**2014 Brazil**, **2018 Russia**, and **2022 Qatar**).
 
-The interface is built with a premium, warm-toned **editorial sports magazine** aesthetic (cream background, charcoal typography, forest green and terracotta accents), avoiding generic dark-themed templates.
-
----
-
-## Features
-
-* **Dimensionality Reduction (PCA)**: Compresses 22 standardized per-90 metrics (expected goals, passing completion, tackles, progressive carries, key passes, etc.) down to 5 principal components preserving **90%+ variance** for similarity calculations, and a 2D projection for the interactive map.
-* **Style Clustering (Scatter Map)**: Plotting players on a 2D grid immediately clusters similar roles (Creative Playmakers, Clinical Finishers, Tempo Midfielders, Defensive Specialists). Hovering over a dot reveals their statistical summary.
-* **Playing Style Explorer**: Clickable cards in the right-hand panel allow focusing on specific player roles on the scatter plot, fading out all other players.
-* **Overlay Radar Charts**: Selecting a player renders their 6-axis percentile profile (Shooting, Creativity, Passing, Defending, Possession, Physical). Click any similar player card to overlay their performance profile in real-time.
-* **Historical Multi-Profile Tracking**: Players who competed in multiple World Cups (e.g. Lionel Messi, Cristiano Ronaldo, Neymar) have separate profiles for each tournament, letting you trace how their role changed over their careers.
+Built with **Python** (Pandas, Scikit-Learn, BeautifulSoup) and **Vanilla HTML/CSS/JavaScript** (Chart.js), it uses **Principal Component Analysis (PCA)** for dimensionality reduction and **Cosine Similarity** to match any player with their top-5 closest historical "statistical twins."
 
 ---
 
-## Project Structure
+## 🌟 Key Features
+
+* 📊 **Dimensionality Reduction (PCA)**: Normalizes 22 per-90 metrics (goals, key passes, progressive carries, tackles, interceptions, etc.) using `StandardScaler` and projects them into a 5-component space retaining **>90% of total variance** for accurate similarity calculations, plus a 2D coordinate space for visual mapping.
+* 🎯 **Cosine Similarity Matching**: Calculates vector angles in the PCA embedding space to surface the 5 most statistically similar World Cup player performances in history.
+* 🎨 **Warm Editorial Design System**: Styled like a modern sports analytics publication with **Instrument Serif** and **DM Sans** typography, cream paper backgrounds (`#FAF8F5`), forest green (`#1B4332`), amber (`#D4A843`), and terracotta (`#C05C3C`) accents—moving away from generic dark-mode AI templates.
+* 🧭 **Interactive Playing Style Explorer**: Right-side role cards allow instant filtering by tactical archetype (*Creative Playmakers & Wingers*, *Clinical Center-Forwards*, *Tempo & Control Midfielders*, *Defensive Specialists*), smoothly dimming non-matching dots on the scatter plot.
+* 🕸️ **Dual Radar Chart Comparison**: Visualizes 6-axis percentile profiles (Shooting, Creativity, Passing, Defending, Possession, Physical). Clicking any similar player overlays their profile as a dotted amber line for head-to-head comparison.
+* ⏳ **Multi-Tournament Evolution**: Tracks players across multiple World Cups as separate tournament profiles (e.g. Lionel Messi 2014 vs. 2022, Cristiano Ronaldo 2014 vs. 2018 vs. 2022, Neymar, Mbappé), allowing you to explore how a player's tactical role and performance evolved over time.
+* 🔄 **Scraper + Fallback Data Pipeline**: Attempts polite web scraping from FBref (including parsing HTML comment tables and caching raw pages). If Cloudflare anti-bot measures block requests, it seamlessly falls back to a curated dataset of **142 real World Cup player performances**.
+
+---
+
+## 📁 Project Structure
 
 ```
-├── .gitignore
-├── requirements.txt
+Player Similarity Engine/
+├── .gitignore               # Excludes virtual environments, pycache, and scraper cache
+├── LICENSE                  # MIT License
+├── README.md                # Project documentation
+├── requirements.txt         # Python dependencies
 ├── scripts/
 │   ├── __init__.py
-│   ├── scrape_fbref.py       # Scraper for FBref player tables (cached)
-│   ├── fallback_data.py      # Curated dataset of 142 World Cup player profiles
-│   └── pipeline.py           # Preprocessing, PCA, Cosine Similarity, export
+│   ├── scrape_fbref.py      # FBref scraper with caching and HTML comment table parsing
+│   ├── fallback_data.py     # Curated dataset of 142 World Cup player profiles (2014-2022)
+│   └── pipeline.py          # Pipeline orchestrator: scaling, PCA, cosine similarity, JSON export
 └── web/
-    ├── index.html            # Semantic layout (Bento grid, search, filters)
-    ├── style.css             # Premium editorial design system
-    ├── app.js                # App controller, Chart.js scatter/radar rendering
+    ├── index.html           # Semantic layout (bento grid, search, chart containers)
+    ├── style.css            # Editorial design system (variables, typography, animations, layout)
+    ├── app.js               # Application controller (Chart.js scatter & radar charts, search)
     └── data/
-        └── players.json      # Pre-computed similarity database generated by the pipeline
+        └── players.json     # Pre-computed similarity database generated by pipeline.py
 ```
 
 ---
 
-## Installation & Setup
+## 🚀 Installation & Usage
 
-### 1. Set Up a Virtual Environment (PowerShell / Windows)
-Ensure you are in the project root folder:
+### 1. Environment Setup (PowerShell / Windows)
+Open your terminal in the project directory and create a virtual environment:
 ```powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
@@ -51,27 +56,44 @@ pip install -r requirements.txt
 ```
 
 ### 3. Run the Data Pipeline
-This processes the player statistics, performs PCA, and compiles the final database into `web/data/players.json`:
+Execute the pipeline script to process player statistics, compute PCA embeddings and similarity scores, and generate `web/data/players.json`:
 ```powershell
 python scripts/pipeline.py
 ```
 
-### 4. Run the Dev Server
-Start a local server to serve the static dashboard and avoid CORS blockages when loading local JSON:
+### 4. Launch the Web Dashboard
+Start a local HTTP server from the project root to serve the `web/` directory (avoiding browser CORS restrictions when loading local JSON):
 ```powershell
 python -m http.server 8000 --directory web
 ```
 
-### 5. Access the Dashboard
-Open your browser and navigate to:
+### 5. Open in Browser
+Navigate to:
 👉 **[http://localhost:8000](http://localhost:8000)**
 
 ---
 
-## Data & Algorithm Details
+## 🧠 Data Science & Mathematical Methodology
 
-1. **Standardization (`StandardScaler`)**: Metrics are standardized to prevent variables with high raw values (e.g., touches) from dominating those with small values (e.g., expected goals).
-2. **Cosine Similarity**: Pairs players based on the angle between their 5-component PCA vectors:
-   $$\text{Similarity} = \cos(\theta) = \frac{\mathbf{A} \cdot \mathbf{B}}{\|\mathbf{A}\| \|\mathbf{B}\|}$$
-   Values close to $1.0$ indicate almost identical statistical profiles.
-3. **Radar Percentiles**: Axis values represent the player's percentile rank relative to the entire dataset (0–100).
+### 1. Feature Standardization (`StandardScaler`)
+To prevent metrics with large numeric ranges (e.g. *touches per 90*) from dominating metrics with smaller ranges (e.g. *goals per 90*), every feature is standardized:
+$$Z = \frac{X - \mu}{\sigma}$$
+
+### 2. Principal Component Analysis (PCA)
+PCA computes the eigenvectors of the covariance matrix to transform 22 per-90 metrics into orthogonal components ordered by explained variance.
+* **5 Principal Components** are retained for metric calculations ($\ge 90\%$ total variance retained).
+* **2 Principal Components** (PC1 and PC2) are used for the 2D visual scatter map.
+
+### 3. Cosine Similarity
+Pairwise similarity between player vectors $\mathbf{A}$ and $\mathbf{B}$ in the 5D PCA space is calculated using the cosine of the angle between them:
+$$\text{Similarity} = \cos(\theta) = \frac{\mathbf{A} \cdot \mathbf{B}}{\|\mathbf{A}\| \|\mathbf{B}\|}$$
+Values closer to $1.0$ indicate nearly identical playing styles and statistical signatures.
+
+### 4. Percentile Radar Profiling
+Radar chart values represent a player's percentile rank ($0–100$) across 6 aggregated tactical categories relative to all outfield players in the dataset.
+
+---
+
+## 📄 License
+
+Distributed under the **MIT License**. See [`LICENSE`](file:///c:/Users/Danish/Desktop/GITHUB%20REPOS/Player%20Similarity%20Engine/LICENSE) for details.
