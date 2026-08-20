@@ -28,9 +28,9 @@ Player Similarity Engine/
 ├── requirements.txt               # Python dependencies
 ├── scripts/
 │   ├── __init__.py
-│   ├── scrape_fbref.py            # FBref scraper with caching and HTML comment table parsing
 │   ├── fallback_data.py           # Curated dataset of 142 World Cup player profiles (2014-2022)
-│   └── pipeline.py                # Pipeline orchestrator: scaling, PCA, cosine similarity, JSON export
+│   ├── pipeline.py                # Pipeline orchestrator: scaling, PCA, cosine similarity, JSON export
+│   └── scrape_fbref.py            # FBref scraper with caching and HTML comment table parsing
 └── web/
     ├── index.html                 # Semantic layout (bento grid, search,  chart containers)
     ├── style.css                  # Editorial design system (variables, typography, animations, layout)
