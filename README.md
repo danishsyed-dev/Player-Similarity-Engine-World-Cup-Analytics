@@ -46,8 +46,8 @@ Player Similarity Engine/
 ### 1. Environment Setup (PowerShell / Windows)
 Open your terminal in the project directory and create a virtual environment:
 ```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
 ### 2. Install Dependencies
